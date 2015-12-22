@@ -87,7 +87,7 @@ ENV CUDA_TOOLKIT_PATH /usr/local/cuda
 ENV CUDNN_INSTALL_PATH /usr/local/cuda
 ENV TF_NEED_CUDA 1
 
-RUN ./configure && \
+RUN TF_UNOFFICIAL_SETTING=1 ./configure && \
     bazel build -c opt --config=cuda tensorflow/tools/pip_package:build_pip_package && \
     bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/pip && \
     pip install --upgrade /tmp/pip/tensorflow-*.whl
