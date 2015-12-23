@@ -87,7 +87,7 @@ ENV CUDA_TOOLKIT_PATH /usr/local/cuda
 ENV CUDNN_INSTALL_PATH /usr/local/cuda
 ENV TF_NEED_CUDA 1
 
-RUN TF_UNOFFICIAL_SETTING=1 ./configure && \
+RUN TF_CUDA_COMPUTE_CAPABILITIES=3.0 TF_UNOFFICIAL_SETTING=1 ./configure && \
     bazel build -c opt --config=cuda tensorflow/tools/pip_package:build_pip_package && \
     bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/pip && \
     pip install --upgrade /tmp/pip/tensorflow-*.whl
@@ -96,6 +96,9 @@ WORKDIR /root
 
 # Set up CUDA variables
 ENV CUDA_PATH /usr/local/cuda
+
+## TODO: UPDATE LD_LIBRARY_PATH
+
 ENV LD_LIBRARY_PATH /usr/local/cuda/lib64
 
 # TensorBoard
