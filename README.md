@@ -19,7 +19,7 @@ run
 ./docker_run_gpu.sh tf/tf
 ```
 
-### after first build
+## after first build ##
 
 trying to run the mnist convolutional network example with
 
@@ -59,6 +59,37 @@ I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:114] retrieving CUDA diagn
 I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:121] hostname: 24b008aee65f
 I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:146] libcuda reported version is: Not found: was unable to find libcuda.so DSO loaded into this program
 I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:257] driver version file contents: """NVRM version: NVIDIA UNIX x86_64 Kernel Module  352.68  Tue Dec  1 17:24:11 PST 2015
-GCC version:  gcc version 4.8.4 (Ubuntu 4.8.4-2ubuntu1~14.04) 
+GCC version:  gcc version 4.8.4 (Ubuntu 4.8.4-2ubuntu1~14.04)
 ```
+
+i think it's happening bc i created a separate user to work with docker.
+going to add `$LD_LIBRARY_PATH` and other shell vars to that user's bashrc and rebuild.
+
+... apparently that didn't help. still getting the same thing.
+
+
+`sudo modprobe nvidia` doesn't list anything when run from the host os.  when run from container, i get:
+
+```
+modprobe: ERROR: ../libkmod/libkmod.c:556 kmod_search_moddep() could not open moddep file '/lib/modules/3.19.0-32-generic/modules.dep.bin'
+```
+
+i checked whether `TF_CUDA_COMPUTE_CAPABILITIES` passed to ./configure by dockerfile makes a difference in the build.  however, it seems to build ok.
+
+but now i'm thinking that the `modprobe` command shouldn't be failing
+from the container.
+
+
+
+ I also needed to add my docker user to sudo group, so I did that.  but then `/lib/modules` wasn't mapped in the container, so i fixed that with the following addition to my run script
+
+```
+export LIB_MODULES=$(\uname -r | xargs -I{} echo '-v /lib/modules/{}:/lib/modules/{}')
+
+# ....
+
+docker run -it $CUDA_SO $LIB_MODULES $DEVICES "$@"
+```
+
+but now, when i run `sudo modprobe nvidia` i'm getting 'modprobe: FATAL: Module nvidia not found.'
 
