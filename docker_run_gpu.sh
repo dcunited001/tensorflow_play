@@ -27,11 +27,16 @@ fi
 export CUDA_SO=$(\ls /usr/lib/x86_64-linux-gnu/libcuda* | \
                     xargs -I{} echo '-v {}:{}')
 export DEVICES=$(\ls /dev/nvidia* | \
-                    xargs -I{} echo '--device {}:{}')
+                        xargs -I{} echo '--device {}:{}')
+
+# trying to make modprobe accessible
+# - making this available makes modprobe accessible
+# - but modprobe still can't find nvidia
+export LIB_MODULES=$(\uname -r | xargs -I{} echo '-v /lib/modules/{}:/lib/modules/{}')
 
 if [[ "${DEVICES}" = "" ]]; then
   echo "Failed to locate NVidia device(s). Did you want the non-GPU container?"
   exit 1
 fi
 
-docker run -it $CUDA_SO $DEVICES "$@"
+docker run -it $CUDA_SO $LIB_MODULES $DEVICES "$@"
