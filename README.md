@@ -6,20 +6,20 @@ to host a Dockerfile that's been slightly modified.  This is so I can
 customize the build to include CUDA support on a late 2013 MacbookPro,
 which is only 3.0 compute capable.
 
-build
+## Building & Running in Docker
+
+### build
 
 ```
 ## hmmm, is this right?
 docker build .
 ```
 
-run
+### run
 
 ```
 ./docker_run_gpu.sh tf/tf
 ```
-
-## after first build ##
 
 trying to run the mnist convolutional network example with
 
@@ -92,4 +92,68 @@ docker run -it $CUDA_SO $LIB_MODULES $DEVICES "$@"
 ```
 
 but now, when i run `sudo modprobe nvidia` i'm getting 'modprobe: FATAL: Module nvidia not found.'
+
+## Building and Running on Host
+
+mostly referencing dockerfile. this skips a lot of steps btw, not a great reference
+
+```
+sudo apt-get update && sudo apt-get install -y \
+        build-essential \
+        curl \
+        git \
+        libfreetype6-dev \
+        libpng12-dev \
+        libzmq3-dev \
+        pkg-config \
+        python-dev \
+        python-numpy \
+        python-pip \
+        software-properties-common \
+        swig \
+        zip \
+        zlib1g-dev
+
+pip install ipykernel jupyter matplotlib
+
+#also need wheel
+pip install wheel
+
+python -m ipykernel.kernelspec
+
+# already have java 8 installed
+
+# already have bazel installed
+export BAZELRC=/home/dc/.bazelrc
+
+# tensorflow build args
+export CUDA_TOOLKIT_PATH=/usr/local/cuda
+export CUDNN_INSTALL_PATH=/usr/local/cuda
+export TF_NEED_CUDA=1
+export CUDA_PATH=/usr/local/cuda
+
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/lib/x86_64-linux-gnu
+
+# ran into problems because i didn't clone with --recursive
+# - and didn't pull the protobuf submodule
+git clone --recursive https://github.com/tensorflow/tensorflow.git
+
+TF_CUDA_COMPUTE_CAPABILITIES=3.0 TF_UNOFFICIAL_SETTING=1 ./configure && \
+    bazel build -c opt --config=cuda tensorflow/tools/pip_package:build_pip_package && \
+    bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/pip && \
+    pip install --upgrade /tmp/pip/tensorflow-*.whl
+```
+
+successfully built with python3, but got metaclass errors.
+
+then i built it again, with python2.  but got metaclass errors.
+
+i've built this shit like 14 times today and it takes 30 minutes every
+time at 100% x 8 cores.  bazel must be doing some badass optimizations.
+
+turns out [this issue](https://github.com/tensorflow/tensorflow/issues/487)
+solve my problems.
+
+
+
 
